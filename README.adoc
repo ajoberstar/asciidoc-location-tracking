@@ -161,8 +161,8 @@ https://github.com/mozilla/source-map
 
 link:https://microsoft.github.io/language-server-protocol/overviews/lsp/overview/[LSP] has become an extremely popular way to increase the reach of languages, by allowing a single LSP server implementation to integrate with any editor that acts as a LSP client. This avoids the MxN combination of integrations that previously needed to exist to support every language in every editor.
 
-.Positions
---
+===== Positions
+
 LSP defines a link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position[position] as a zero-based place _between_ two characters in a text document. They use the term "character offset" as this document defined *column offset*. They further allow clarification of the "character offset" to count in units defined by UTF-8 (bytes), UTF-16, or UTF-32.
 
 If a provided "character offset" is longer than the line, it is normalized to the line's length.
@@ -178,17 +178,17 @@ Additionally regarding the variety of end-of-line sequences that could be allowe
 ____
 To ensure that both client and server split the string into the same line representation the protocol specifies the following end-of-line sequences: ‘\n’, ‘\r\n’ and ‘\r’. Positions are line end character agnostic. So you can not specify a position that denotes \r|\n or \n| where | represents the character offset.
 ____
---
 
-.Ranges
---
+===== Ranges
+
 LSP defines a link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#range[range] as zero-based start (inclusive) and end (exclusive) positions.
 
 [quote]
 ____
 A range in a text document expressed as (zero-based) start and end positions. A range is comparable to a selection in an editor. Therefore, the end position is exclusive. If you want to specify a range that contains a line including the line ending character(s) then use an end position denoting the start of the next line.
 ____
---
+
+===== Usage
 
 Many LSP features build off the use of Position and Range, including:
 
@@ -196,6 +196,16 @@ Many LSP features build off the use of Position and Range, including:
 * link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location[Location] uses a document URI and a Range
 * link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#locationLink[LocationLink] uses an origin Range a target document URI, Range, and selection Range.
 * link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic[Diagnostic] uses a Range and metadata about the identified problem
+
+===== Questions
+
+In relation to the questions posed in this document:
+
+* *Purpose/Goals:* not clearly indicated
+* *File offsets or not:* not used
+* *Zero-based or one-based:* zero-based
+* *Inclusive or exclusive:* inclusive start and exclusive end
+* *Special representation:* none (explicitly calls out newlines as having no special values)
 
 ==== VS Code
 
@@ -219,12 +229,25 @@ some text|
 below a blank line
 ----
 
+Given the above cursor location, pressing the right arrow key on the keyboard gives the following position.
+
 .Line 2, Column 1
 ----
 some text
 |
 below a blank line
 ----
+
+Pressing right arrow one more time.
+
+.Line 3, Column 1
+----
+some text
+
+|below a blank line
+----
+
+Within a line.
 
 .Line 3, Column 4
 ----
@@ -249,10 +272,26 @@ Internally, VS Codes APIs are instead zero-based, but otherwise similar to the v
 * link:https://code.visualstudio.com/api/references/vscode-api#Range[Range] is a start and end position.
 * link:https://code.visualstudio.com/api/references/vscode-api#Diagnostic[Diagnostic] includes a range and metadata about the problem.
 
-See the `vscode-test/` folder for an example extension that shows some of the values in practice.
+See the `vscode-test/` folder for an example extension that shows some of the values in practice, but as with LSP they highlight selections and ranges having an inclusive start and exclusive end.
 
+===== Questions
+
+In response to the questions posed in this document, see the answers for LSP as nothing seems different here. The only minor exception is that while it's internal API is zero-based like LSP, the visual display of line offset and column offset is one-based.
 
 ==== Emacs
+
+
+* link:https://www.gnu.org/software/emacs/manual/html_node/elisp/Positions.html[Positions]
++
+[quote]
+____
+A position is the index of a character in the text of a buffer. More precisely, a position identifies the place between two characters (or before the first character, or after the last character), so we can speak of the character before or after a given position. However, we often speak of the character “at” a position, meaning the character after that position.
+
+Positions are usually represented as integers starting from 1
+____
+
+
+
  https://www.gnu.org/software/emacs/manual/html_node/elisp/Positions.html
  https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
  https://www.gnu.org/software/emacs/manual/html_node/flymake/Backend-functions.html
