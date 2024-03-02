@@ -1,0 +1,45 @@
+= Locations in AsciiDoc ASG
+
+== Background
+
+== Questions
+
+== Pre-Spec Approach
+
+== Positions / Offsets
+
+== Lines / Columns
+
+== Cursors / Selections / Ranges
+
+== In the Wild
+
+=== Parsers
+
+==== Peggy.js
+
+==== Antlr
+
+=== Languages
+
+==== Java
+
+==== Ruby
+
+==== Python
+
+==== Rust
+
+=== Editors
+
+==== Language Server Protocol
+
+==== VS Code
+
+==== Emacs
+
+==== Intellij
+
+==== Vim
+
+== My Proposal
