@@ -245,6 +245,8 @@ In response to the questions posed by this document:
 
 ==== Antlr
 
+
+
 === Languages
 
 ==== Java
@@ -295,11 +297,6 @@ CL-USER> (subseq text 5 10)
 "text
 "
 ----
-
-==== Source Maps
-
-https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?amp;pli=1&amp;pli=1&pli=1
-https://github.com/mozilla/source-map
 
 === Editors
 
