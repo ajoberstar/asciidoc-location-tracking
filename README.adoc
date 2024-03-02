@@ -12,7 +12,7 @@ If I misinterpreted the current position of the AsciiDoc language project anywhe
 
 == Background
 
-As part of AsciiDoc's specification, an Abstract Semantic Graph (ASG) is being defined to unambiguously represent the parsed structure of an AsciiDoc document. Implementations can optionally include `location` properties on ASG elements to denote the position where the element can be found in the source document.
+As part of AsciiDoc's specification, an Abstract Semantic Graph (ASG) is being defined to unambiguously represent the parsed structure of an AsciiDoc document. Implementations can optionally include `location` properties on ASG elements to denote the range where the element can be found in the source document.
 
 When an implementation chooses to emit `location` properties in its ASG output, the specification will mandate that they conform to defined location tracking rules so that there is consistency between implementations.
 
@@ -25,10 +25,10 @@ This document raises questions that the spec's location tracking section should 
 As part of defining the ASG's location tracking the following questions are important to clearly answer:
 
 . *Purpose/Goals:* What are locations in the ASG in service of? What are the expected use cases and how does the chosen scheme tailor to them?
-. *Offsets or not:* Is the included data only line and column? Or should the offset within the file be included as well?
-. *Zero-based or one-based:* Should the offset/line/column be zero-based or one-based? The answer isn't inherently the same for all 3 elements.
-. *Inclusive or exclusive:* Are the start and end inclusive or exclusive of the matched characters? Again this may differ between start and end.
-. *Special representation:* Does a newline character (or any other character)  have special representation in the format?
+. *File offsets or not:* Is the included data only line offset and column offset? Or should the file offset  be included as well?
+. *Zero-based or one-based:* Should the file/line/column offsets be zero-based or one-based? The answer isn't inherently the same for all 3 elements.
+. *Inclusive or exclusive:* Are the start and end positions inclusive or exclusive of the matched characters? Again this may differ between start and end.
+. *Special representation:* Does a newline character (or any other character)  have special representation in the format? If so what is the rationale for this, as it implies an exception that must be accounted for by the parser?
 
 == Non-Goals
 
@@ -78,14 +78,14 @@ selection:: An editor's (often visual) representation of a *range* that will be 
 
 == Pre-Spec Approach
 
-The location tracking in use in pre-spec is defined in implementation of the asciidoc-tck and asciidoc-parsing-lab and discussed in the following to issue threads:
+Pre-spec location tracking is defined in the implementation of the asciidoc-tck and asciidoc-parsing-lab and discussed in the following to issue threads:
 
 * link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/28#note_1107831[issue 28]
 * link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/48[issue 48]
 
 In terms of answers to the questions listed above:
 
-. **Purpose/Goals:** So far I haven't found a direct articulation of this but the following are the ones that seemed most informative to me:
+. **Purpose/Goals:** So far I haven't found a direct articulation of this, but the following are quotes that seemed most informative to me:
 +
 [quote]
 ____
@@ -98,18 +98,21 @@ Normally, the lowest column value is 1. However, there are two cases when the co
 ____
 +
 This suggests to me that the optimization is towards an end user, who may be trying to visually locate the element identified by the ASG location, but I may be misinterpreting.
-. **Offsets or not:** Currently, I've seen no proposal that includes an offset within the `location` property.
+. **File offsets or not:** Currently, I've seen no proposal that includes a file offset within the `location` property.
 . **Zero-based or one-based:** Lines and columns are one-based, with the exception of newlines (see below).
 . **Inclusive or exclusive:** Start and end locations are both inclusive.
-. **Special handling:** Locations that represent the newline character of an empty line have a column of 0, while in all other cases the first character of a line is considered to have column 1.
+. **Special handling:** Locations that represent the newline character of an empty line have a column of 0, while in all other cases the first character of a line is considered to have column 1. The stated intent is to communicate that the line contains no visible characters (content).
 
-== Positions / Offsets
+.Commentary
+****
+In my attempt at an implementation, special handling of newlines requires an exception in the code to calculate locations. Presuming I'm not mistaken that this is considered "exceptional" or "special" representation, I believe it needs a stronger justification in the specification of the value it provides (and to whom) when weighed against a simpler approach that treats a newline as any other character, just one that is considered the final column in a line.
 
-== Lines / Columns
-
-== Cursors / Selections / Ranges
+Again this is purely for calculation of a newlines position, not about whether it is or is not included in the location of any given element.
+****
 
 == In the Wild
+
+This section covers how other software calculates and uses positions and ranges.
 
 === Parsers
 
