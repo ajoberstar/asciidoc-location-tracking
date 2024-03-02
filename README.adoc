@@ -280,6 +280,7 @@ In response to the questions posed in this document, see the answers for LSP as 
 
 ==== Emacs
 
+===== Positions
 
 * link:https://www.gnu.org/software/emacs/manual/html_node/elisp/Positions.html[Positions]
 +
@@ -289,12 +290,132 @@ A position is the index of a character in the text of a buffer. More precisely, 
 
 Positions are usually represented as integers starting from 1
 ____
+* link:https://www.gnu.org/software/emacs/manual/html_node/elisp/Point.html[Point] (the cursor)
++
+[quote]
+____
+Point is a special buffer position used by many editing commands, including the self-inserting typed characters and text insertion functions. Other commands move point through the text to allow editing and insertion at different places.
+
+Like other positions, point designates a place between two characters (or before the first character, or after the last character), rather than a particular character. Usually terminals display the cursor over the character that immediately follows point; point is actually before the character on which the cursor sits.
+
+The value of point is a number no less than 1, and no greater than the buffer size plus 1. If narrowing is in effect (see Narrowing), then point is constrained to fall within the accessible portion of the buffer (possibly at one end of it). 
+____
+* link:https://www.gnu.org/software/emacs/manual/html_node/elisp/Columns.html[Columns]
++
+[quote]
+____
+These functions count each character according to the number of columns it occupies on the screen. This means control characters count as occupying 2 or 4 columns, depending upon the value of ctl-arrow, and tabs count as occupying a number of columns that depends on the value of tab-width and on the column where the tab begins.
+____
++
+[quote]
+____
+
+Function: current-column ¶
+
+    This function returns the horizontal position of point, measured in columns, counting from 0 at the left margin. The column position is the sum of the widths of all the displayed representations of the characters between the start of the current line and point. 
+____
++
+.Commentary
+****
+Emacs notably uses visual columns rather than a count of characters in the line. These are also zero-based, while the line offsets and file offsets are one-based.
+****
+
+With a similar example to the VS Code one, I use a combination of `M-:` and `(point)` to identify the current location of point in a buffer and `(line-number-mode 1)` `(column-number-mode 1)` to display the line/column in the modeline. As with the VS Code examples `|` will indicate the location of point (the cursor).
+
+.Position 1, Line 1, Column 0
+----
+|some text
+
+below a blank line
+----
+
+.Position 10, Line 1, Column 9
+----
+some text|
+
+below a blank line
+----
+
+Given the above cursor location, pressing `C-f` (the `forward-char` command) on the keyboard gives the following position.
+
+.Position 11, Line 2, Column 0
+----
+some text
+|
+below a blank line
+----
+
+Pressing `C-f` (the `forward-char` command) one more time.
+
+.Position 12, Line 3, Column 0
+----
+some text
+
+|below a blank line
+----
+
+Within a line.
+
+.Position 15, Line 3, Column 3
+----
+some text
+
+bel|ow a blank line
+----
+
+If you call `(pos-eol)` with the above point location, you get position 30 as you would be moving the point to the end of the line like below.
+
+.Position 30, Line 3, Column 18
+----
+some text
+
+below a blank line|
+----
+
+===== Ranges
+
+* link:https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Mark.html[Mark]
++
+[quote]
+____
+The mark specifies a position to bound a range of text for many commands, such as kill-region and indent-rigidly. These commands typically act on the text between point and the mark, which is called the region.
+____
+* link:https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Region.html[Region]
++
+[quote]
+____
+The text between point and the mark is known as the region. 
+____
+
+The Region is equivalent to the primary Selection in VS Code. `(region-beginning)` and `(region-end)` can be used to identify the positions bounding the region. In the example below, I use two `|` to denote the mark and the point.
+
+.Start Position 6, End Position 11
+----
+some |text
+|
+below a blank line
+----
+
+If I use `kill-region` to illustrate what's included in the region, you can see that the region start is inclusive and the region end is exclusive.
+
+----
+some |
+below a blank line
+----
+
+===== Navigation
+
+Emacs provides functions like `(goto-char position)` that take a one-based integer position as described above. Along with ones to move a relative number of characters, words, lines, etc.
 
 
+===== Questions
 
- https://www.gnu.org/software/emacs/manual/html_node/elisp/Positions.html
- https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
- https://www.gnu.org/software/emacs/manual/html_node/flymake/Backend-functions.html
+In response to the questions posed by this document:
+
+* *File offsets or not:* Yes, file offsets are in fact the primary way of finding a position in a document. Navigating to a location by line and column is possible, but requires knowledge of the special handling of columns.
+* *Zero-based or one-based:* Mostly one-based, but columns are zero-based.
+* *Inclusive or exclusive:* Regions have an inclusive start and exclusive end
+* *Special representation:* Newlines don't seem to have any special representation, however tab characters do as defined by `tab-width` which controls the visual number of columns that a tab character takes up.
 
 ==== Intellij
 
