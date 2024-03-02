@@ -114,6 +114,26 @@ Again this is purely for calculation of a newlines position, not about whether i
 
 This section covers how other software calculates and uses positions and ranges.
 
+.Commentary
+****
+A clear intention in defining a specification is to encourage new and compliant implementations using a variety of technologies to both:
+
+* Further the "reach" of AsciiDoc, making it available in more software than it currently is.
+* Ensure that AsciiDoc means AsciiDoc(TM) and not a superficial equivalence like many Markdown flavors have.
+
+This suggests that success of the specification will be a balance between:
+
+* How easy is it for an implementor to interpret and comply with the details of the specification?
+* How compatible is the specification with the behavior of the existing Asciidoctor and AsciiDoc.py implementations that have defined the language to date? (i.e. how many documents will "break" when using a spec-compliant implementation)
+
+
+To further the criteria of "easy to implement", there is clear value in conforming to approaches commonly used in related software in the industry as it will reduce the effort needed to both produce and make use of compliant implementations of AsciiDoc.
+
+An implementor may choose an existing parser library for their implementation or want to hook their implementation up to an editor for navigation, highlighting, or problem reporting and do so with a minimum of effort. This is something I, personally, think is a highly valuable outcome of the specification and should be considered highly in the goals and purpose of location tracking.
+
+While this could lead to an implementation not as obviously clear to a human document author, it is more likely that a document author is a consumer of the implementation's integration with other software than the direct output of the ASG. As such it _is_ human-friendly to be machine-friendly.
+****
+
 === Parsers
 
 ==== Peggy.js
@@ -151,5 +171,7 @@ https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/spe
 ==== Intellij
 
 ==== Vim
+
+=== Summary
 
 == My Proposal
