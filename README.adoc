@@ -419,7 +419,166 @@ In response to the questions posed by this document:
 
 ==== Intellij
 
+===== User-Facing
+
+Visually in Intellij, the following locations are reported in the bottom bar. The `|` character is used to indicate the cursor position. Cursors are located before a character allowing insertion of text.
+
+.Line 1, Column 1
+----
+|some text
+
+below a blank line
+----
+
+.Line 1, Column 10
+----
+some text|
+
+below a blank line
+----
+
+Given the above cursor location, pressing the right arrow key on the keyboard gives the following position.
+
+.Line 2, Column 1
+----
+some text
+|
+below a blank line
+----
+
+Pressing right arrow one more time.
+
+.Line 3, Column 1
+----
+some text
+
+|below a blank line
+----
+
+Within a line.
+
+.Line 3, Column 4
+----
+some text
+
+bel|ow a blank line
+----
+
+.Line 3, Column 19
+----
+some text
+
+below a blank line|
+----
+
+Selections are visually reported as the cursor location and a count of characters included. In the example below, I use two `|` to denote the mark and the point.
+
+.Line 2, Column 1, 5 characters, 1 line break
+----
+some |text
+|
+below a blank line
+----
+
+If I use `Cut` to illustrate what's included in the region, you can see that the selection start is inclusive and the region end is exclusive.
+
+----
+some |
+below a blank line
+----
+
+===== API
+
+The Jetbrains API was less clear on definitions compared to VS Code and Emacs, so I'll leave that as an exercise to the reader, but I'd expect some level of consistency with the user-facing results here.
+
+The best hint I found was in link:https://github.com/JetBrains/intellij-community/blob/idea/233.14475.28/platform/core-api/src/com/intellij/lexer/Lexer.java#L82-L90[the Lexer API] which used a single offset, which implied use of file offsets internally.
+
+==== Questions
+
+In response to the questions posed by this doc:
+
+* *File offsets or not:* Some hints that they are used internally
+* *Zero-based or one-based:* Visually, Intellij reports one-based line/column offsets
+* *Inclusive or exclusive:* inclusive start and exclusive end
+* *Special representation:* appears not
+
 ==== Vim
+
+NOTE: My Vim knowledge is very minimal, so there may be inaccuracies here.
+
+===== User-Facing
+
+Vim's behavior differs between normal mode and insert mode. The following line and column positions are reported at the bottom.
+
+The unique display when on the newline character of a blank line appears to be described as a "split column" display in link:https://vimhelp.org/usr_03.txt.html#usr_03.txt[the documentation]:
+
+[quote]
+____
+Sometimes you will see a split column number.  For example, "col 2-9".
+This indicates that the cursor is positioned on the second character, but
+because character one is a tab, occupying eight spaces worth of columns,
+the screen column is 9.
+____
+
+.Normal mode and insert mode, Line 1, Column 1
+----
+|some text
+
+below a blank line
+----
+
+.Normal mode, cannot navigate here; Insert mode, Line 1, Column 10
+----
+some text|
+
+below a blank line
+----
+
+.Normal mode, Line 2, Column 0-1; Insert mode, Line 2, Column 1
+----
+some text
+|
+below a blank line
+----
+
+.Normal mode and insert mode, Line 3, Column 1
+----
+some text
+
+|below a blank line
+----
+
+.Normal mode and insert mode, Line 3, Column 4
+----
+some text
+
+bel|ow a blank line
+----
+
+.Normal mode, cannot navigate here; Insert mode, Line 3, Column 19
+----
+some text
+
+below a blank line|
+----
+
+==== API
+
+* link:https://vimhelp.org/builtin.txt.html#col%28%29[col()] gets the byte index of the given position. The end of the line is count of bytes on the line plus 1. The first character of the column is 1. There are separate functions for visual/screen columns.
+* link:https://vimhelp.org/builtin.txt.html#line%28%29[line()] gets the line number of the given position which appears to be 1-based.
+* link:https://vimhelp.org/builtin.txt.html#cursor%28%29[cursor()] positions the cursor at a line and column (byte offset)
+* link:https://vimhelp.org/builtin.txt.html#getpos%28%29[getpos()] gets a position returning a list of `bufnum` (seems like an indicator of the mark), `lnum` (line number), `cnum` (column = byte offset), `off` (indicating if virtual mode is used or not).
+
+==== Questions
+
+NOTE: I'm not very confident of the answers here, being very unfamiliar with Vimscript, so I couldn't easily test out the API.
+
+In response to the questions posed in this document:
+
+* *File offsets or not:* doesn't seem like it
+* *Zero-based or one-based:* one-based
+* *Inclusive or exclusive:* I couldn't tell
+* *Special representation:* Newlines/tabs, etc seem to get visually indicated in split mode, but internally the byte offset in the line is what gets used. Ultimately, I'd probably say no special representation.
 
 === Summary
 
