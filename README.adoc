@@ -144,11 +144,52 @@ While this could lead to an implementation not as obviously clear to a human doc
 
 ==== Java
 
+For operations within a string:
+
+[source, java]
+----
+"some text\n\nbelow a line\n".charAt(0); // 's'
+"some text\n\nbelow a line\n".charAt(9); // '\n'
+"some text\n\nbelow a line\n".charAt(14); // 'o'
+"some text\n\nbelow a line\n".substring(5, 11); // 'text\n\n'
+----
+
 ==== Ruby
 
-==== Python
+For operations within a string:
 
-==== Rust
+[source, ruby]
+----
+"some text\n\nbelow a line\n"[0] # "s"
+"some text\n\nbelow a line\n"[9] # "\n"
+"some text\n\nbelow a line\n"[14] # "o"
+"some text\n\nbelow a line\n".[5..10] # 'text\n\n'
+"some text\n\nbelow a line\n".slice(5, 6) # 'text\n\n'
+----
+
+==== Common Lisp
+
+For operations within a string:
+
+[source, lisp]
+----
+CL-USER> (defparameter text (concatenate 'string "some text" (string #\newline) (string #\newline) "below a line" (string #\newline)))
+TEXT
+CL-USER> text
+"some text
+
+below a line
+"
+CL-USER> (elt text 0)
+#\s
+CL-USER> (elt text 9)
+#\Newline
+CL-USER> (elt text 14)
+#\o
+CL-USER> (subseq text 5 10)
+"text
+"
+----
 
 ==== Source Maps
 
