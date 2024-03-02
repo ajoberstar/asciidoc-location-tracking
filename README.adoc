@@ -1,10 +1,107 @@
 = Locations in AsciiDoc ASG
+Andrew Oberstar <andrew@ajoberstar.org>
+
+I (Andrew Oberstar) am not affiliated with the AsciiDoc working group or any of its projects. However, I am trying to participate as a community member by producing my own implementation of the specification alongside its development in order to support the goal of a final v1 specification.
+
+Where this document refers to the specification's content/goals/intentions, this is purely my interpretation of documents, discussions, and code I have seen and is intended to be representative of the AsciiDoc language project as of specification milestone v0.3.0, TCK milestone v0.1.0, and the parsing lab as of its commit on 2023-08-07.
+
+[NOTE]
+====
+If I misinterpreted the current position of the AsciiDoc language project anywhere in this document, please let me know of inaccuracies, so I can correct them.
+====
 
 == Background
 
+As part of AsciiDoc's specification, an Abstract Semantic Graph (ASG) is being defined to unambiguously represent the parsed structure of an AsciiDoc document. Implementations can optionally include `location` properties on ASG elements to denote the position where the element can be found in the source document.
+
+When an implementation chooses to emit `location` properties in its ASG output, the specification will mandate that they conform to defined location tracking rules so that there is consistency between implementations.
+
+The pre-spec link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck[asciidoc-tck] and  link:https://github.com/opendevise/asciidoc-parsing-lab/[asciidoc-parsing-lab] have an existing approach that has yet to be formalized in the spec but is being tracked in link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/48[issue 48].
+
+This document raises questions that the spec's location tracking section should answer to better clarify its goals and behavior and, at the end, my proposal for how locations should be calculated.
+
 == Questions
 
+As part of defining the ASG's location tracking the following questions are important to clearly answer:
+
+. *Purpose/Goals:* What are locations in the ASG in service of? What are the expected use cases and how does the chosen scheme tailor to them?
+. *Offsets or not:* Is the included data only line and column? Or should the offset within the file be included as well?
+. *Zero-based or one-based:* Should the offset/line/column be zero-based or one-based? The answer isn't inherently the same for all 3 elements.
+. *Inclusive or exclusive:* Are the start and end inclusive or exclusive of the matched characters? Again this may differ between start and end.
+. *Special representation:* Does a newline character (or any other character)  have special representation in the format?
+
+== Non-Goals
+
+When I originally raised this topic in link:https://asciidoc.zulipchat.com/#narrow/stream/335219-asciidoc-lang/topic/Locations.20and.20the.20spec[Zulip] I interleaved what are ultimately multiple different issues, so I want to be clear what this _isn't_ about:
+
+* What characters are considered part of any given element. This is not about whether trailing newlines are part of blocks or inlines.
++
+For the purpose of this document, presume that an element's bounds are defined elsewhere, but I will include examples of cases where elements begin, contain, or end with newlines and examples without those just to ensure there is clarity of location calculation regardless of the decision on a given element's bounds.
+* Which ASG objects should have locations on them. Again, for the purpose of this document, this can be presumed to be defined elsewhere in the spec.
+* How locations should be tracked for attribute references or included files. While this would likely be part of a decision record on location tracking, it's not something I'm trying to cover in any way here.
+
+This is purely about calculation of the values in the `location` property presuming those points are decided.
+
+== Terminology
+
+NOTE: This is only meant for clarity of this document and not a presumption of the AsciiDoc project's terminology.
+
+element:: A given syntax component in the language (e.g. paragraph, open block, constrained strong span, etc.)
+character:: Any valid Unicode code point
+visible character:: Any **character** that is typically displayed in a human-oriented editor (with settings like "visible whitespace" turned off)
+newline:: A `\n` **character**, `0A` in Unicode (hexadecimal)
+line:: As defined by link:https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_206[POSIX]
++
+[quote]
+____
+3.206 Line
+
+A sequence of zero or more non- <newline> characters plus a terminating <newline> character.
+____
+empty line:: As defined by link:[POSIX]
++
+[quote]
+____
+3.145 Empty Line
+
+A line consisting of only a <newline>; see also Blank Line.
+____
+position:: A representation of a place within in a file, often used to describe where a *character* or sequence of characters can be found. See *file offset*, *line offset*, *column offset* for concrete ways to talk about a position.
+range:: A bounded representation of a sequence of *characters* within a file. Defined by a start and end *position* (both of which must be clarified as inclusive or exclusive). See *location* for a concrete way to talk about a range.
+file offset:: A single-integer representation of a *position* within a file. This is independent of *line offset* and *column offset* and identifies a byte or *character* index within the file contents (when thought of as an array or string). File offsets may be 0-based or 1-based. A file offset can independently describe a position.
+line offset:: A single-integer representation of the *line* where a *position* can be found. In a zero-based representation, this is the count of *newline* characters preceding the position being described. In one-based, just add 1 to that count. Special character representations may have rules requiring other values for certain characters or positions. A line offset can only fully describe a position with a corresponding *column offset*.
+column offset:: A single-integer representation of the column within a *line* where a *position* can be found. In a zero-based representation, this is the count of *characters* that precede the character being described. In one-based, just add 1 to that count. Special character representations may have rules requiring other values for certain characters or positions. A column offset can only fully describe a character's position with a corresponding *line offset*.
+location:: The `location` property within the ASG representing a *range* that indicates the bounds of an *element*.
+cursor:: An editor's (often visual) current *position* within a file, typically indicating the position where text will be inserted or of the *character* that would be overwritten by the user's next command.
+selection:: An editor's (often visual) representation of a *range* that will be acted on by the user's next command.
+
+
 == Pre-Spec Approach
+
+The location tracking in use in pre-spec is defined in implementation of the asciidoc-tck and asciidoc-parsing-lab and discussed in the following to issue threads:
+
+* link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/28#note_1107831[issue 28]
+* link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/48[issue 48]
+
+In terms of answers to the questions listed above:
+
+. **Purpose/Goals:** So far I haven't found a direct articulation of this but the following are the ones that seemed most informative to me:
++
+[quote]
+____
+When computing the end location of a block, the column of the trailing newline is not included. The block ends at the visible location in the source document, not at the newline that follows it. For a delimited block with a delimiter length of 4, the end column is 4, not 5. There are two reasons for this. First, it points to a column in the source that the cursor can go. Second, it ensures that the end column for a block is consistent regardless of whether it's at the end of the document or somewhere in the middle of it.
+____
++
+[quote]
+____
+Normally, the lowest column value is 1. However, there are two cases when the column must be 0. First, if a document has no blocks, then the start and end column is 0. The 0 column indicates that the source does not occupy any space. If the first line of the document is empty, then the start column is 0. The 0 column indicates that there is no content on the first line, only a newline that follows it. Similarly, if the contents of a verbatim block starts with an empty line, then the start column of the content is 0, again indicating that there is no content on the first line, only the newline that follows it. If the content has a trailing empty line, then the end column is 0 for the same reason.
+____
++
+This suggests to me that the optimization is towards an end user, who may be trying to visually locate the element identified by the ASG location, but I may be misinterpreting.
+. **Offsets or not:** Currently, I've seen no proposal that includes an offset within the `location` property.
+. **Zero-based or one-based:** Lines and columns are one-based, with the exception of newlines (see below).
+. **Inclusive or exclusive:** Start and end locations are both inclusive.
+. **Special handling:** Locations that represent the newline character of an empty line have a column of 0, while in all other cases the first character of a line is considered to have column 1.
 
 == Positions / Offsets
 
@@ -30,13 +127,23 @@
 
 ==== Rust
 
+==== Source Maps
+
+https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?amp;pli=1&amp;pli=1&pli=1
+https://github.com/mozilla/source-map
+
 === Editors
 
 ==== Language Server Protocol
 
+https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#positionEncodingKind
+
 ==== VS Code
 
 ==== Emacs
+ https://www.gnu.org/software/emacs/manual/html_node/elisp/Positions.html
+ https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
+ https://www.gnu.org/software/emacs/manual/html_node/flymake/Backend-functions.html
 
 ==== Intellij
 
