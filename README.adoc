@@ -199,6 +199,57 @@ Many LSP features build off the use of Position and Range, including:
 
 ==== VS Code
 
+===== User-Facing
+
+Visually in VS Code, the following locations are reported in the bottom bar. The `|` character is used to indicate the cursor position. I originally tried to grab screenshots, but had a hard time capturing the blinking cursor.
+
+Cursors are located before a character allowing insertion of text.
+
+.Line 1, Column 1
+----
+|some text
+
+below a blank line
+----
+
+.Line 1, Column 10
+----
+some text|
+
+below a blank line
+----
+
+.Line 2, Column 1
+----
+some text
+|
+below a blank line
+----
+
+.Line 3, Column 4
+----
+some text
+
+bel|ow a blank line
+----
+
+.Line 3, Column 19
+----
+some text
+
+below a blank line|
+----
+
+===== API
+
+Internally, VS Codes APIs are instead zero-based, but otherwise similar to the visual positions. Given VS Code's heavy association with LSP the overlap of definitions could fairly be considered just one example of behavior in the wild.
+
+* link:https://code.visualstudio.com/api/references/vscode-api#Position[Position] is a zero-based line offset and zero-based character (column) offset as with LSP.
+* link:https://code.visualstudio.com/api/references/vscode-api#Selection[Selection] is a range from an anchor position to the active position (active being the position of the cursor).
+* link:https://code.visualstudio.com/api/references/vscode-api#Range[Range] is a start and end position.
+* link:https://code.visualstudio.com/api/references/vscode-api#Diagnostic[Diagnostic] includes a range and metadata about the problem.
+
+See the `vscode-test/` folder for an example extension that shows some of the values in practice.
 
 
 ==== Emacs
