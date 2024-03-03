@@ -836,4 +836,5 @@ Admittedly, this is what I chose internally in my implementation before looking 
 As modifications to what is currently defined:
 
 * Removal of the special 0 column indicator for empty lines.
+* Changing the location's end property to be _exclusive_ rather than _inclusive_.
 * Possible addition of 0-based offsets to the `location` property.
