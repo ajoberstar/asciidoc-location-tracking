@@ -1,9 +1,10 @@
 = Locations in AsciiDoc ASG
 Andrew Oberstar <andrew@ajoberstar.org>
+:toc:
 
 I (Andrew Oberstar) am not affiliated with the AsciiDoc working group or any of its projects. However, I am trying to participate as a community member by producing my own implementation of the specification alongside its development in order to support the goal of a final v1 specification.
 
-Where this document refers to the specification's content/goals/intentions, this is purely my interpretation of documents, discussions, and code I have seen and is intended to be representative of the AsciiDoc language project as of specification milestone v0.3.0, TCK milestone v0.1.0, and the parsing lab as of its commit on 2023-08-07.
+Where this document refers to the specification's content/goals/intentions, this is purely my interpretation of documents, discussions, and code I have seen and is intended to be representative of the AsciiDoc language project state as of specification milestone v0.3.0, TCK milestone v0.1.0, and the parsing lab as of its commit on 2023-08-07.
 
 [NOTE]
 ====
@@ -18,7 +19,7 @@ When an implementation chooses to emit `location` properties in its ASG output, 
 
 The pre-spec link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck[asciidoc-tck] and  link:https://github.com/opendevise/asciidoc-parsing-lab/[asciidoc-parsing-lab] have an existing approach that has yet to be formalized in the spec but is being tracked in link:https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang/-/issues/48[issue 48].
 
-This document raises questions that the spec's location tracking section should answer to better clarify its goals and behavior and, at the end, my proposal for how locations should be calculated.
+This document raises questions that the spec's location tracking section should answer to better clarify its goals and behavior, surveys some prior art on location tracking, and ends with my proposal for how locations should be calculated.
 
 == Questions
 
@@ -32,11 +33,11 @@ As part of defining the ASG's location tracking the following questions are impo
 
 == Non-Goals
 
-When I originally raised this topic in link:https://asciidoc.zulipchat.com/#narrow/stream/335219-asciidoc-lang/topic/Locations.20and.20the.20spec[Zulip] I interleaved what are ultimately multiple different issues, so I want to be clear what this _isn't_ about:
+When I originally raised this topic in link:https://asciidoc.zulipchat.com/#narrow/stream/335219-asciidoc-lang/topic/Locations.20and.20the.20spec[Zulip] I interleaved what are ultimately multiple different issues, so I want to be clear what this document _isn't_ about:
 
 * What characters are considered part of any given element. This is not about whether trailing newlines are part of blocks or inlines.
 +
-For the purpose of this document, presume that an element's bounds are defined elsewhere, but I will include examples of cases where elements begin, contain, or end with newlines and examples without those just to ensure there is clarity of location calculation regardless of the decision on a given element's bounds.
+For the purpose of this document, presume that an element's bounds are defined elsewhere.
 * Which ASG objects should have locations on them. Again, for the purpose of this document, this can be presumed to be defined elsewhere in the spec.
 * How locations should be tracked for attribute references or included files. While this would likely be part of a decision record on location tracking, it's not something I'm trying to cover in any way here.
 
@@ -67,7 +68,7 @@ ____
 A line consisting of only a <newline>; see also Blank Line.
 ____
 position:: A representation of a place within in a file, often used to describe where a *character* or sequence of characters can be found. See *file offset*, *line offset*, *column offset* for concrete ways to talk about a position.
-range:: A bounded representation of a sequence of *characters* within a file. Defined by a start and end *position* (both of which must be clarified as inclusive or exclusive). See *location* for a concrete way to talk about a range.
+range:: A bounded representation of a sequence of *characters* within a file. Defined by start and end *positions* (both of which must be clarified as inclusive or exclusive). See *location* for a concrete way to talk about a range.
 file offset:: A single-integer representation of a *position* within a file. This is independent of *line offset* and *column offset* and identifies a byte or *character* index within the file contents (when thought of as an array or string). File offsets may be 0-based or 1-based. A file offset can independently describe a position.
 line offset:: A single-integer representation of the *line* where a *position* can be found. In a zero-based representation, this is the count of *newline* characters preceding the position being described. In one-based, just add 1 to that count. Special character representations may have rules requiring other values for certain characters or positions. A line offset can only fully describe a position with a corresponding *column offset*.
 column offset:: A single-integer representation of the column within a *line* where a *position* can be found. In a zero-based representation, this is the count of *characters* that precede the character being described. In one-based, just add 1 to that count. Special character representations may have rules requiring other values for certain characters or positions. A column offset can only fully describe a character's position with a corresponding *line offset*.
@@ -132,6 +133,8 @@ To further the criteria of "easy to implement", there is clear value in conformi
 An implementor may choose an existing parser library for their implementation or want to hook their implementation up to an editor for navigation, highlighting, or problem reporting and do so with a minimum of effort. This is something I, personally, think is a highly valuable outcome of the specification and should be considered highly in the goals and purpose of location tracking.
 
 While this could lead to an implementation not as obviously clear to a human document author, it is more likely that a document author is a consumer of the implementation's integration with other software than the direct output of the ASG. As such it _is_ human-friendly to be machine-friendly.
+
+On the compatibility criteria, I haven't seen any indication that there is anything within Asciidoctor that tracks full locations for each element. I do see some code for `:source_location`, but it appears to only track line positions. This implies to me that this is a point the spec is much freer to make any decision on than most of the parsing behavior ones.
 ****
 
 === Parsers
@@ -238,7 +241,7 @@ The following trace output shows what Peggy chose as locations for its matches:
 
 In response to the questions posed by this document:
 
-* *File offsets or not:* 0-based offsets included
+* *File offsets or not:* Yes, 0-based file offsets included
 * *Zero-based or one-based*: 0-based file offsets, but 1-based line and column
 * *Inclusive or exclusive*: inclusive start, exclusive end
 * *Special representation:* appears not, newlines are just another character
@@ -320,17 +323,22 @@ The output is a little difficult to parse, but the token lines seem to be transl
 [@2,2:5='test',<WORD>,1:2]
 ----
 
-* `2:5` indicates the inclusive start and inclusive end file offset.
+* `2:5` indicates the 0-based inclusive start and inclusive end file offset.
 * `1:2` indicates the 1-based line offset and the 0-based column offset.
 
 In response to the questions posed by this document:
 
-* *File offsets or not:* 0-based offsets included
+* *File offsets or not:* Yes, 0-based file offsets included
 * *Zero-based or one-based*: 0-based file and column offsets, but 1-based line offset
 * *Inclusive or exclusive*: inclusive start, inclusive end for tokens
 * *Special representation:* appears not, newlines are just another character
 
 === Languages
+
+This turned out to not be a super-informative:
+
+* Most programming languages provide 0-based indexing into strings and arrays
+* Most programming languages often provide substring operations with an inclusive start and exclusive end offset into the string
 
 ==== Java
 
@@ -385,7 +393,7 @@ CL-USER> (subseq text 5 10)
 
 ==== Language Server Protocol
 
-link:https://microsoft.github.io/language-server-protocol/overviews/lsp/overview/[LSP] has become an extremely popular way to increase the reach of languages, by allowing a single LSP server implementation to integrate with any editor that acts as a LSP client. This avoids the MxN combination of integrations that previously needed to exist to support every language in every editor.
+link:https://microsoft.github.io/language-server-protocol/overviews/lsp/overview/[LSP] has become an extremely popular way to increase the reach of languages, by allowing a single LSP server implementation to integrate with any editor that acts as an LSP client. This avoids the MxN combination of integrations that previously needed to exist to support every language in every editor.
 
 ===== Positions
 
@@ -427,7 +435,6 @@ Many LSP features build off the use of Position and Range, including:
 
 In relation to the questions posed in this document:
 
-* *Purpose/Goals:* not clearly indicated
 * *File offsets or not:* not used
 * *Zero-based or one-based:* zero-based
 * *Inclusive or exclusive:* inclusive start and exclusive end
@@ -491,14 +498,12 @@ below a blank line|
 
 ===== API
 
-Internally, VS Codes APIs are instead zero-based, but otherwise similar to the visual positions. Given VS Code's heavy association with LSP the overlap of definitions could fairly be considered just one example of behavior in the wild.
+Internally, VS Codes APIs are instead zero-based, but otherwise equivalent to the visual positions. Given VS Code's heavy association with LSP the overlap of definitions could fairly be considered just one example of behavior in the wild.
 
 * link:https://code.visualstudio.com/api/references/vscode-api#Position[Position] is a zero-based line offset and zero-based character (column) offset as with LSP.
 * link:https://code.visualstudio.com/api/references/vscode-api#Selection[Selection] is a range from an anchor position to the active position (active being the position of the cursor).
 * link:https://code.visualstudio.com/api/references/vscode-api#Range[Range] is a start and end position.
 * link:https://code.visualstudio.com/api/references/vscode-api#Diagnostic[Diagnostic] includes a range and metadata about the problem.
-
-See the `vscode-test/` folder for an example extension that shows some of the values in practice, but as with LSP they highlight selections and ranges having an inclusive start and exclusive end.
 
 ===== Questions
 
@@ -804,8 +809,31 @@ In response to the questions posed in this document:
 * *File offsets or not:* doesn't seem like it
 * *Zero-based or one-based:* one-based
 * *Inclusive or exclusive:* I couldn't tell
-* *Special representation:* Newlines/tabs, etc seem to get visually indicated in split mode, but internally the byte offset in the line is what gets used. Ultimately, I'd probably say no special representation.
+* *Special representation:* Newlines/tabs, etc. seem to get visually indicated in split mode, but internally the byte offset in the line is what gets used. Ultimately, I'd probably say no special representation.
 
 === Summary
 
+This is clearly only a subset of possible software I could have surveyed, and its possible I missed finer points in some of them (especially Vim), but it can illustrate a few things:
+
+* Common editors _do_ allow you to navigate to an empty line by indicating the first column (0 or 1, depending on the 0-based or 1-based scheme used).
+* While some editors APIs/commands will accept a negative or beyond the line end value for the column, they just wrap you back to the first or last column. Even Vim's split-mode display of newline and tab characters seemed merely visual and not something that carried over to the API for positioning.
+* Zero and one based decision is kind of all over the place, but there seemed to be a trend of 1-based in human-oriented output and 0-based in many (but not all) internal APIs.
+** Emacs and Vim were both 1-based internally for line and/or file offsets, but 0-based for columns.
+* Inclusive start and exclusive end seemed common (ANTLR being the notable exception for its token locations).
+
 == My Proposal
+
+In response to the questions posed by this document, my proposal for AsciiDoc's `location` property calculation is:
+
+* *Purpose/Goals:* Focus on how to report warnings/errors to the end user and on how to integrate with other software. Do not expect and end user to directly read the ASG and optimize for that. Machine-friendliness in the spec is human-friendliness to the implementor and to the user who interacts with the integrated documentation system.
+* *File offsets or not:* I initially expected this to be a little more clearly in favor of these file offsets being a key machine interface, but it seems many editors do expose line/col based APIs. I do think this is a useful addition, though, as other software needs to separately index line positions to know how to navigate to a specific line/column. Some software does that for you and exposes the API with that assumption, but some software won't and a file offset is pretty easy in most languages to deal with by just indexing into an array/string.
+* *Zero-based or one-based:* Peggy's approach seemed like a reasonable compromise. Zero-based file offsets, which a machine can easily use, and 1-based location and column info. Lots of software uses 1-based lines, columns is more of a mixed bag though.
++
+Admittedly, this is what I chose internally in my implementation before looking at Peggy, so I do have a bias.
+* *Inclusive or exclusive:* Inclusive start and exclusive end seemed like the predominant favorite. It also aligns well with common substring operations, on top of most editor APIs.
+* *Special representation:* No, there should not be any special representation for newlines. It does not appear to be canonical in any of the software surveyed in this document. This would require both exceptional handling in the parser implementations as well as exceptional handling in translating to other software you would integrate with.
+
+As modifications to what is currently defined:
+
+* Removal of the special 0 column indicator for empty lines.
+* Possible addition of 0-based offsets to the `location` property.
